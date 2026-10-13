@@ -21,7 +21,7 @@ public class TargetScore : MonoBehaviour
     {
         //componenta care coloreaza cubul
         targetRenderer = GetComponent<Renderer>();
-        materialOriginal = targetRenderer.material; //culoarea gri initiala
+        materialOriginal = targetRenderer.material;
     }
 
     // functia apelata automat cand ceva intra in triggerul cubului
