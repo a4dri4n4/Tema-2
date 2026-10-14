@@ -4,70 +4,85 @@ using System.Collections;
 
 public class TargetScore : MonoBehaviour
 {
-    [Header("Setari UI")]
+    [Header("UI")]
     public TextMeshProUGUI textScor;
+    public TextMeshProUGUI textCombo;
+    public TextMeshProUGUI textComboLost;
 
-    [Header("Efect vizual")]
+    [Header("Efecte")]
     public Material materialSucces;
-    private Material materialOriginal;
-    private Renderer targetRenderer;
+    public AudioClip sunetSucces;
+    public ParticleSystem efectParticule;
 
-    [Header("Jucator pentru a calcula distanta")]
+    [Header("Jucator")]
     public Transform player;
 
+    private Material materialOriginal;
+    private Renderer targetRenderer;
+    private AudioSource audioSource;
     private int scorTotal = 0;
+    private int combo = 0;
 
     void Start()
     {
-        //componenta care coloreaza cubul
         targetRenderer = GetComponent<Renderer>();
-        materialOriginal = targetRenderer.material; //culoarea gri initiala
+        materialOriginal = targetRenderer.material;
+        audioSource = GetComponent<AudioSource>();
+        textComboLost.text = "";
     }
 
-    // functia apelata automat cand ceva intra in triggerul cubului
     void OnTriggerEnter(Collider other)
     {
-        // verificam daca ce a intrat are eticheta "Minge"
-        if (other.CompareTag("Minge"))
-        {
-            CalculareScor();
-            StartCoroutine(EfectVizual());
+        if (other.CompareTag("Minge")){
 
-            // respawn minge
-            other.transform.position = new Vector3(0f, 1f, 1f);
+        combo++;
+        ActualizeazaCombo();
+        CalculareScor();
 
-            // opreste miscarea mingii
-            other.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
-            other.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        StartCoroutine(EfectVizual());
+        audioSource.pitch = Mathf.Min(1f + combo * 0.1f, 2f);
+        audioSource.PlayOneShot(sunetSucces);
+        efectParticule.Play();
+
+        other.GetComponent<MingeReset>().Respawn();
         }
     }
 
     void CalculareScor()
     {
-        // calc distanta in m dintre jucator si tinta
         float distanta = Vector3.Distance(player.position, transform.position);
+        int puncte = Mathf.RoundToInt(distanta * 10) * combo;
+        scorTotal += puncte;
 
-        // transf dist in puncte (4 m=40 p)
-        // Mathf.RoundToInt pt a rotunji la un nr intreg
-        int puncteCastigate = Mathf.RoundToInt(distanta * 10);
-
-        scorTotal = scorTotal + puncteCastigate;
-
-        // act textul pe ecran
-        if (textScor != null)
-        {
-            textScor.text = "Scor: " + scorTotal + "\n(+ " + puncteCastigate + " pt distanta!)";
-        }
+        textScor.text = "Scor: " + scorTotal + "\n(+ " + puncte + " pt)";
     }
 
-    // tinta se coloreaza pt 0.5 secunde
+    void ActualizeazaCombo()
+    {
+        textCombo.text = combo > 0 ? "COMBO x" + combo : "";
+    }
+
+    public void ResetCombo()
+    {
+
+        if (combo > 5)
+        StartCoroutine(AfiseazaComboLost());
+        combo = 0;
+        ActualizeazaCombo();
+        
+    }
+
     IEnumerator EfectVizual()
     {
-        if (materialSucces != null)
-        {
-            targetRenderer.material = materialSucces;
-            yield return new WaitForSeconds(0.5f);
-            targetRenderer.material = materialOriginal;
-        }
+        targetRenderer.material = materialSucces;
+        yield return new WaitForSeconds(0.5f);
+        targetRenderer.material = materialOriginal;
+    }
+
+    IEnumerator AfiseazaComboLost()
+    {
+        textComboLost.text = "COMBO LOST!";
+        yield return new WaitForSeconds(1.5f);
+        textComboLost.text = "";
     }
 }
