@@ -36,6 +36,7 @@ public class TargetScore : MonoBehaviour
         if (other.CompareTag("Minge")){
 
         combo++;
+
         ActualizeazaCombo();
         CalculareScor();
 
